@@ -24,7 +24,7 @@ def test_db():
 def search_doctors():
     # Get query params
     specialty = request.args.get("specialty")
-    location = request.args.get("location")  # optional, if you add locations later
+    location = request.args.get("location")  # add locations later
 
     query = {}
     if specialty:
