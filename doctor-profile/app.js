@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000";
+const API_URL = "http://localhost:5001";
 
 // TODO: Replace mock data with real API once backend routes are ready
 // GET /api/doctors/1
@@ -67,7 +67,7 @@ async function bookAppointment() {
         const response = await fetch(`${API_URL}/api/appointments`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ doctor_id: 1, time: selectedSlot })
+            body: JSON.stringify({ doctor_id: "1", time: selectedSlot })
         });
 
         if (response.ok) {
