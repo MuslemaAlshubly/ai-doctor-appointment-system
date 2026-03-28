@@ -1,5 +1,10 @@
 const API_URL = "http://localhost:5000";
 
+// TODO: Replace mock data with real API once backend routes are ready
+// GET /api/doctors/1
+// GET /api/doctors/1/slots
+// POST /api/appointments
+
 document.addEventListener("DOMContentLoaded", () => {
     loadDoctorProfile();
     loadAvailableSlots();
