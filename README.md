@@ -8,7 +8,7 @@
 docker build -t ai-doctor-appointement-system .
 
 # Run the container
-docker run -d -p 5001:5000 --name ai-doctor-appointement-system ai-doctor-appointement-system
+docker run -d -p 5001:5000 --name ai-doctor-appointement-system --env-file .env ai-doctor-appointement-system
 
 # Test the application
 open http://localhost:5001
