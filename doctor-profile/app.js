@@ -1,9 +1,5 @@
-const API_URL = "http://localhost:5001";
+const API_URL = "https://ai-doctor-appointment-system.onrender.com";
 
-// TODO: Replace mock data with real API once backend routes are ready
-// GET /api/doctors/1
-// GET /api/doctors/1/slots
-// POST /api/appointments
 
 document.addEventListener("DOMContentLoaded", () => {
     loadDoctorProfile();
@@ -15,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // Load doctor profile from backend
 async function loadDoctorProfile() {
     try {
-        const response = await fetch(`${API_URL}/api/doctors/1`);
+        const response = await fetch(`${API_URL}/api/doctors/2`);
         const doctor = await response.json();
 
         document.getElementById("doctor-name").textContent = doctor.name;
@@ -31,7 +27,7 @@ async function loadDoctorProfile() {
 // Load available time slots
 async function loadAvailableSlots() {
     try {
-        const response = await fetch(`${API_URL}/api/doctors/1/slots`);
+        const response = await fetch(`${API_URL}/api/doctors/2/slots`);
         const slots = await response.json();
 
         const slotsList = document.getElementById("time-slots");
@@ -67,7 +63,7 @@ async function bookAppointment() {
         const response = await fetch(`${API_URL}/api/appointments`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ doctor_id: "1", time: selectedSlot })
+            body: JSON.stringify({ doctor_id: "2", time: selectedSlot })
         });
 
         if (response.ok) {
