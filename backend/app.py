@@ -1,9 +1,11 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from db import db
 
 app = Flask(__name__)
 CORS(app)
+
+
 
 
 @app.route("/")
@@ -23,6 +25,10 @@ def test_db():
 # -------------------------
 # Doctor Profile Feature
 # -------------------------
+@app.route('/doctor-profile')
+def doctor_profile():
+    return send_from_directory('doctor-profile', 'index.html')
+
 @app.route('/api/doctors/<doctor_id>', methods=['GET'])
 def get_doctor(doctor_id):
     doctor = db.doctors.find_one({"_id": doctor_id})
@@ -46,6 +52,9 @@ def book_appointment():
         "time": data["time"]
     })
     return jsonify({"message": f"Appointment booked for {data['time']}"}), 201
+
+
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
