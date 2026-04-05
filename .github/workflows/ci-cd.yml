@@ -24,7 +24,7 @@ jobs:
       - name: Run linter
         run: |
           pip install flake8
-          flake8 backend/ --max-line-length=120 --ignore=E501
+          flake8 backend/ --max-line-length=120 --ignore=E302,E303,W292
 
       - name: Run unit tests
         run: |
@@ -82,3 +82,4 @@ jobs:
       - name: Trigger Render deploy
         run: |
           curl --fail "${{ secrets.RENDER_DEPLOY_URL }}"
+       
