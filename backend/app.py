@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from db import db
@@ -27,7 +28,8 @@ def test_db():
 # -------------------------
 @app.route('/doctor-profile')
 def doctor_profile():
-    return send_from_directory('doctor-profile', 'index.html')
+    return send_from_directory(os.path.join(os.path.dirname(__file__), '..', 'doctor-profile'), 'index.html')
+
 
 @app.route('/api/doctors/<doctor_id>', methods=['GET'])
 def get_doctor(doctor_id):
