@@ -21,3 +21,5 @@ docker logs ai-doctor-appointement-system
 # Stop and remove the container
 docker stop ai-doctor-appointement-system && docker rm ai-doctor-appointement-system
 ```
+
+#Testing the CI-CD pipeline
