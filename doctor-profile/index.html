@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Profile</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header>
+        <h1>Doctor Profile</h1>
+    </header>
+
+    <main>
+        <!-- Doctor Card -->
+        <section class="doctor-card" id="doctor-info">
+            <img src="" alt="Doctor Photo" id="doctor-photo">
+            <div class="doctor-details">
+                <h2 id="doctor-name">Loading...</h2>
+                <p id="doctor-specialty"></p>
+                <p id="doctor-email"></p>
+                <p id="doctor-phone"></p>
+            </div>
+        </section>
+
+        <!-- Availability -->
+        <section class="availability">
+            <h3>Available Time Slots</h3>
+            <ul id="time-slots">
+                <!-- Slots loaded dynamically -->
+            </ul>
+        </section>
+
+        <!-- Book Button -->
+        <button id="book-btn">Book Appointment</button>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 AI Doctor Appointment System</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
