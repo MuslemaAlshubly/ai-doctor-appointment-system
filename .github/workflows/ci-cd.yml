@@ -62,6 +62,7 @@ jobs:
             echo "Attempt $i/30 - waiting..."
             sleep 2
           done
+
           docker stop doctor-test && docker rm doctor-test
 
   cd:
