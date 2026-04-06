@@ -2,6 +2,8 @@ import os
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from db import db
+from bson.objectid import ObjectId
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -22,41 +24,37 @@ def test_db():
     db.test.insert_one({"msg": "hello"})
     return "DB works"
 
-
 # -------------------------
-# Doctor Profile Feature
+# Medical Records Feature
 # -------------------------
-@app.route('/doctor-profile')
-def doctor_profile():
-    return send_from_directory(os.path.join(os.path.dirname(__file__), '..', 'doctor-profile'), 'index.html')
 
+@app.route("/medical-records", methods=["POST"])
+def add_medical_record():
+    data = request.get_json()
+    record = {
+        "patient_name": data.get("patient_name"),
+        "age": data.get("age"),
+        "diagnosis": data.get("diagnosis"),
+        "notes": data.get("notes"),
+        "created_at": datetime.utcnow()
+    }
+    result = db.medical_records.insert_one(record)
+    return jsonify({"message": "Record added", "id": str(result.inserted_id)}), 201
 
-@app.route('/api/doctors/<doctor_id>', methods=['GET'])
-def get_doctor(doctor_id):
-    doctor = db.doctors.find_one({"_id": doctor_id})
-    if not doctor:
-        return jsonify({"error": "Doctor not found"}), 404
-    doctor["_id"] = str(doctor["_id"])
-    return jsonify(doctor)
+@app.route("/medical-records", methods=["GET"])
+def get_all_records():
+    records = list(db.medical_records.find())
+    for r in records:
+        r["_id"] = str(r["_id"])
+    return jsonify(records)
 
-@app.route('/api/doctors/<doctor_id>/slots', methods=['GET'])
-def get_slots(doctor_id):
-    slots = list(db.slots.find({"doctor_id": doctor_id}))
-    for slot in slots:
-        slot["_id"] = str(slot["_id"])
-    return jsonify(slots)
-
-@app.route('/api/appointments', methods=['POST'])
-def book_appointment():
-    data = request.json
-    db.appointments.insert_one({
-        "doctor_id": data["doctor_id"],
-        "time": data["time"]
-    })
-    return jsonify({"message": f"Appointment booked for {data['time']}"}), 201
-
-
-
+@app.route("/medical-records/<record_id>", methods=["GET"])
+def get_record(record_id):
+    record = db.medical_records.find_one({"_id": ObjectId(record_id)})
+    if record:
+        record["_id"] = str(record["_id"])
+        return jsonify(record)
+    return jsonify({"error": "Record not found"}), 404
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
