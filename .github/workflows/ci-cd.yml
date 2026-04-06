@@ -52,8 +52,16 @@ jobs:
             -e MONGO_URI=${{ secrets.MONGO_URI }} \
             --name doctor-test \
             ${{ secrets.DOCKERHUB_USERNAME }}/ai-doctor-appointment-system:latest
-          sleep 5
-          curl --fail http://localhost:5000/health
+          echo "=== Container Logs ==="
+          docker logs doctor-test
+          for i in {1..30}; do
+            if curl --fail http://localhost:5000/health 2>/dev/null; then
+              echo "Health check passed"
+              break
+            fi
+            echo "Attempt $i/30 - waiting..."
+            sleep 2
+          done
           docker stop doctor-test && docker rm doctor-test
 
   cd:
