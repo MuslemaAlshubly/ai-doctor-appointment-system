@@ -63,7 +63,7 @@ async function bookAppointment() {
         const response = await fetch(`${API_URL}/api/appointments`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ doctor_id: "2", time: selectedSlot })
+            body: JSON.stringify({ doctor_id: "1", time: selectedSlot })
         });
 
         if (response.ok) {
