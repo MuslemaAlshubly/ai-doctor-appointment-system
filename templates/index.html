@@ -1,18 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Doctor Appointment</title>
+    <title>Doctor Appointment System</title>
 </head>
 <body>
     <h1>Book Appointment</h1>
 
-    <input type="text" placeholder="Your Name">
-    <input type="date">
-    <input type="text" placeholder="Doctor Name">
-    <button>Book</button>
+    <form>
+        <label>Patient Name:</label><br>
+        <input type="text"><br><br>
 
-    <h2>Ask AI</h2>
-    <input type="text" placeholder="Enter symptoms">
-    <button>Ask</button>
+        <label>Select Doctor:</label><br>
+        <select>
+            <option>Dr. Ahmed</option>
+            <option>Dr. Sara</option>
+        </select><br><br>
+
+        <label>Date:</label><br>
+        <input type="date"><br><br>
+
+        <button type="submit">Book</button>
+    </form>
 </body>
 </html>
