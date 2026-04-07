@@ -1,6 +1,8 @@
-from flask import Flask, jsonify, request
-from db import db
-from bson.objectid import ObjectId
+import os
+
+from flask import Flask, jsonify, request, send_from_directory
+from flask_cors import CORS
+from backend.db import db
 from datetime import datetime
 from flask_cors import CORS
 
@@ -46,27 +48,35 @@ def search_doctors():
     return jsonify(doctors)
 
 # -------------------------
-# Medical Record Feature
+# Doctor Profile Feature
 # -------------------------
-# Create a record
-@app.route("/medical-records", methods=["POST"])
-def create_record():
+
+@app.route('/api/doctors/<doctor_id>', methods=['GET'])
+def get_doctor(doctor_id):
+    doctor = db.doctors.find_one({"_id": doctor_id})
+    if not doctor:
+        return jsonify({"error": "Doctor not found"}), 404
+    doctor["_id"] = str(doctor["_id"])
+    return jsonify(doctor)
+
+@app.route('/api/doctors/<doctor_id>/slots', methods=['GET'])
+def get_slots(doctor_id):
+    slots = list(db.slots.find({"doctor_id": doctor_id}))
+    for slot in slots:
+        slot["_id"] = str(slot["_id"])
+    return jsonify(slots)
+
+
+@app.route('/api/appointments', methods=['POST'])
+def book_appointment():
     data = request.json
-    record = {
-        "patient_id": data["patient_id"],
+    db.appointments.insert_one({
         "doctor_id": data["doctor_id"],
-        "notes": data["notes"],
-    }
-    db.records.insert_one(record)
-    return {"message": "Record created"}
+        "time": data["time"]
+    })
+    return jsonify({"message": f"Appointment booked for {data['time']}"}), 201
 
-# Get records for a patient
-@app.route("/medical-records/<patient_id>", methods=["GET"])
-def get_records(patient_id):
-    records = list(db.records.find({"patient_id": patient_id}))
-    for r in records:
-        r["_id"] = str(r["_id"])
-    return jsonify(records)
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+if __name__ == '__main__':
+    db.init_db()
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
