@@ -1,6 +1,6 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
+from flask_cors import CORS
 from db import db
-from bson.objectid import ObjectId
 from datetime import datetime
 
 app = Flask(__name__)
@@ -73,7 +73,3 @@ def book_appointment():
     })
     return jsonify({"message": f"Appointment booked for {data['time']}"}), 201
 
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
