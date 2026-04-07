@@ -29,6 +29,7 @@ def test_db():
 # Doctor Search Feature
 # -------------------------
 
+
 @app.route("/search-doctors", methods=["GET"])
 def search_doctors():
     # Get query params
@@ -50,6 +51,12 @@ def search_doctors():
 # -------------------------
 # Doctor Profile Feature
 # -------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DOCTOR_PROFILE_DIR = os.path.join(BASE_DIR, "../doctor-profile")
+
+@app.route("/doctor-profile")
+def doctor_profile_page():
+    return send_from_directory(DOCTOR_PROFILE_DIR, "index.html")
 
 @app.route('/api/doctors/<doctor_id>', methods=['GET'])
 def get_doctor(doctor_id):
