@@ -19,19 +19,27 @@ async function checkSymptoms() {
     document.getElementById("result-section").style.display = "none";
 
     try {
-        const response = await fetch(`${API_URL}/api/symptom-checker`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ symptoms })
-        });
+    const response = await fetch(`${API_URL}/api/symptom-checker`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symptoms })
+    });
+
+    if (!response.ok) {
+        const err = await response.text();
+        console.error("Server error:", err);
+        alert("Server error. Check console for details.");
+        return;
+    }
 
     const data = await response.json();
-
     document.getElementById("diagnosis").textContent = data.diagnosis;
     document.getElementById("recommendation").textContent = "Recommended Specialty: " + data.specialty;
     document.getElementById("urgency").textContent = "Urgency: " + data.urgency;
     document.getElementById("explanation").textContent = data.explanation;
+
     
+
     } catch (error) {
         alert("Failed to check symptoms. Please try again.");
         console.error(error);

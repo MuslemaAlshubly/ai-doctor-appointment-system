@@ -101,11 +101,21 @@ def symptom_checker_static(filename):
 
 @app.route("/api/symptom-checker", methods=["POST"])
 def symptom_checker():
-    symptoms = request.json.get("symptoms", "")
-    prompt = build_symptom_prompt(symptoms)
-    raw = call_gemini(prompt)
-    result = parse_gemini_response(raw)
-    return jsonify(result)
+    try:
+        symptoms = request.json.get("symptoms", "")
+        prompt = build_symptom_prompt(symptoms)
+        raw = call_gemini(prompt)
+        result = parse_gemini_response(raw)
+        return jsonify(result)
+    except Exception as e:
+        print(f"Error: {e}")  # shows in Render logs
+        return jsonify({"error": str(e)}), 500
+    
+
+@app.route("/debug-env")
+def debug_env():
+    key = os.environ.get("GEMINI_KEY", "NOT FOUND")
+    return jsonify({"key_loaded": key != "NOT FOUND", "key_preview": key[:8] + "..."})   
 
 if __name__ == '__main__':
     db.init_db()
