@@ -25,11 +25,13 @@ async function checkSymptoms() {
             body: JSON.stringify({ symptoms })
         });
 
-        const data = await response.json();
+    const data = await response.json();
 
-        document.getElementById("diagnosis").textContent = data.diagnosis;
-        document.getElementById("recommendation").textContent = "Recommended Specialty: " + data.specialty;
-        document.getElementById("result-section").style.display = "block";
+    document.getElementById("diagnosis").textContent = data.diagnosis;
+    document.getElementById("recommendation").textContent = "Recommended Specialty: " + data.specialty;
+    document.getElementById("urgency").textContent = "Urgency: " + data.urgency;
+    document.getElementById("explanation").textContent = data.explanation;
+    
     } catch (error) {
         alert("Failed to check symptoms. Please try again.");
         console.error(error);

@@ -16,12 +16,13 @@
             <textarea id="symptoms-input" placeholder="Describe your symptoms... (e.g. headache, fever, sore throat)"></textarea>
             <button id="check-btn">Check Symptoms</button>
         </section>
-        <section class="result" id="result-section" style="display:none">
-            <h2>AI Diagnosis</h2>
-            <div id="diagnosis"></div>
-            <div id="recommendation"></div>
+        <div id="result-section" style="display:none;">
+            <p id="diagnosis"></p>
+            <p id="recommendation"></p>
+            <p id="urgency"></p>       <!-- 🆕 -->
+            <p id="explanation"></p>   <!-- 🆕 -->
             <button id="book-btn">Book Appointment</button>
-        </section>
+        </div>
         <div id="loading" style="display:none">Analyzing symptoms...</div>
     </main>
     <footer>
