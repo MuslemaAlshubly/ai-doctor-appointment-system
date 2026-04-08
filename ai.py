@@ -25,13 +25,22 @@ def call_gemini(prompt: str) -> str:
     result = response.json()
     return result["candidates"][0]["content"]["parts"][0]["text"]
 
-def parse_gemini_response(text: str) -> tuple:
-    # Example parsing: adjust based on your actual response format
-    # Assuming response contains something like:
-    # "Diagnosis: XYZ. Specialty: ABC."
-    diagnosis = "Unknown"
-    specialty = "General Practitioner"
-    if "Diagnosis:" in text and "Specialty:" in text:
-        diagnosis = text.split("Diagnosis:")[1].split("Specialty:")[0].strip().rstrip(".")
-        specialty = text.split("Specialty:")[1].strip().rstrip(".")
-    return diagnosis, specialty
+def parse_gemini_response(text: str) -> dict:
+    try:
+        # Remove markdown code fences if present
+        clean = re.sub(r"```json|```", "", text).strip()
+        data = json.loads(clean)
+        return {
+            "diagnosis": data.get("diagnosis", "Unable to determine"),
+            "specialty": data.get("specialty", "General Practitioner"),
+            "urgency": data.get("urgency", "Routine"),
+            "explanation": data.get("explanation", "")
+        }
+    except json.JSONDecodeError:
+        return {
+            "diagnosis": "Unable to determine",
+            "specialty": "General Practitioner",
+            "urgency": "Routine",
+            "explanation": text  # fallback: show raw response
+        }
+
