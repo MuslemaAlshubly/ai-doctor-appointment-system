@@ -4,7 +4,7 @@ import re
 import json
 
 MODEL = "gemini-2.5-flash-lite"
-API_ENDPOINT = f"https://aiplatform.googleapis.com/v1/publishers/google/models/{MODEL}:generateContent"
+API_ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent"
 
 def call_gemini(prompt: str) -> str:
     api_key = os.environ["GEMINI_KEY"]
