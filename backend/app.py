@@ -83,6 +83,31 @@ def book_appointment():
     })
     return jsonify({"message": f"Appointment booked for {data['time']}"}), 201
 
+
+# -------------------------
+# Medical Record Feature
+# -------------------------
+# Create a record
+@app.route("/medical-records", methods=["POST"])
+def create_record():
+    data = request.json
+    record = {
+        "patient_id": data["patient_id"],
+        "doctor_id": data["doctor_id"],
+        "notes": data["notes"],
+    }
+    db.records.insert_one(record)
+    return {"message": "Record created"}
+
+# Get records for a patient
+@app.route("/medical-records/<patient_id>", methods=["GET"])
+def get_records(patient_id):
+    records = list(db.records.find({"patient_id": patient_id}))
+    for r in records:
+        r["_id"] = str(r["_id"])
+    return jsonify(records)
+
+
 if __name__ == '__main__':
     db.init_db()
     port = int(os.environ.get('PORT', 5000))
