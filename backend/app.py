@@ -5,11 +5,10 @@ from flask_cors import CORS
 from backend.db import db
 from datetime import datetime
 from flask_cors import CORS
+from ai import call_gemini, parse_gemini_response, build_symptom_prompt
 
 app = Flask(__name__)
 CORS(app)
-
-
 
 
 @app.route("/")
@@ -28,6 +27,7 @@ def test_db():
 # -------------------------
 # Doctor Search Feature
 # -------------------------
+
 
 @app.route("/search-doctors", methods=["GET"])
 def search_doctors():
@@ -50,6 +50,16 @@ def search_doctors():
 # -------------------------
 # Doctor Profile Feature
 # -------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DOCTOR_PROFILE_DIR = os.path.join(BASE_DIR, "../doctor-profile")
+
+@app.route('/doctor-profile')
+def doctor_profile_page():
+    return send_from_directory(os.path.join(os.path.dirname(__file__), '..', 'doctor-profile'), 'index.html')
+
+@app.route('/doctor-profile/<path:filename>')
+def doctor_profile_static(filename):
+    return send_from_directory(DOCTOR_PROFILE_DIR, filename)
 
 @app.route('/api/doctors/<doctor_id>', methods=['GET'])
 def get_doctor(doctor_id):
@@ -78,28 +88,34 @@ def book_appointment():
 
 
 # -------------------------
-# Medical Record Feature
+# AI Symptom Checker
 # -------------------------
-# Create a record
-@app.route("/medical-records", methods=["POST"])
-def create_record():
-    data = request.json
-    record = {
-        "patient_id": data["patient_id"],
-        "doctor_id": data["doctor_id"],
-        "notes": data["notes"],
-    }
-    db.records.insert_one(record)
-    return {"message": "Record created"}
 
-# Get records for a patient
-@app.route("/medical-records/<patient_id>", methods=["GET"])
-def get_records(patient_id):
-    records = list(db.records.find({"patient_id": patient_id}))
-    for r in records:
-        r["_id"] = str(r["_id"])
-    return jsonify(records)
+@app.route('/symptom-checker')
+def symptom_checker_page():
+    return send_from_directory(os.path.join(os.path.dirname(__file__), '..', 'symptom-checker'), 'index.html')
 
+@app.route('/symptom-checker/<path:filename>')
+def symptom_checker_static(filename):
+    return send_from_directory(os.path.join(os.path.dirname(__file__), '..', 'symptom-checker'), filename)
+
+@app.route("/api/symptom-checker", methods=["POST"])
+def symptom_checker():
+    try:
+        symptoms = request.json.get("symptoms", "")
+        prompt = build_symptom_prompt(symptoms)
+        raw = call_gemini(prompt)
+        result = parse_gemini_response(raw)
+        return jsonify(result)
+    except Exception as e:
+        print(f"Error: {e}")  # shows in Render logs
+        return jsonify({"error": str(e)}), 500
+    
+
+@app.route("/debug-env")
+def debug_env():
+    key = os.environ.get("GEMINI_KEY", "NOT FOUND")
+    return jsonify({"key_loaded": key != "NOT FOUND", "key_preview": key[:8] + "..."})   
 
 if __name__ == '__main__':
     db.init_db()

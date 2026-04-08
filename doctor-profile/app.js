@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // Load doctor profile from backend
 async function loadDoctorProfile() {
     try {
-        const response = await fetch(`${API_URL}/api/doctors/2`);
+        const response = await fetch(`${API_URL}/api/doctors/1`);
         const doctor = await response.json();
 
         document.getElementById("doctor-name").textContent = doctor.name;
@@ -27,7 +27,7 @@ async function loadDoctorProfile() {
 // Load available time slots
 async function loadAvailableSlots() {
     try {
-        const response = await fetch(`${API_URL}/api/doctors/2/slots`);
+        const response = await fetch(`${API_URL}/api/doctors/1/slots`);
         const slots = await response.json();
 
         const slotsList = document.getElementById("time-slots");
