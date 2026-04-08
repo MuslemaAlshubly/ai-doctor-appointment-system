@@ -86,6 +86,7 @@ function Dashboard() {
               <thead style={{ background: '#f3f4f6' }}>
                 <tr>
                   <th>Patient Name</th>
+                  <th>Patient Email</th>
                   <th>Doctor</th>
                   <th>Date & Time</th>
                   <th>Status</th>
@@ -96,10 +97,15 @@ function Dashboard() {
                 {recentAppointments.map((appointment) => (
                   <tr key={appointment._id}>
                     <td>
-                      <strong>{appointment.patientName}</strong>
+                      <strong>{appointment.patientName || 'N/A'}</strong>
                     </td>
-                    <td>{appointment.doctorName}</td>
-                    <td>{new Date(appointment.appointmentDate).toLocaleString()}</td>
+                    <td>{appointment.patientEmail || 'N/A'}</td>
+                    <td>{appointment.doctorName || 'N/A'}</td>
+                    <td>
+                      {appointment.appointmentDate
+                        ? new Date(appointment.appointmentDate).toLocaleString()
+                        : 'N/A'}
+                    </td>
                     <td>
                       <span
                         className={`badge ${
@@ -110,7 +116,7 @@ function Dashboard() {
                             : 'status-inactive'
                         }`}
                       >
-                        {appointment.status}
+                        {appointment.status || 'pending'}
                       </span>
                     </td>
                     <td>
