@@ -53,10 +53,13 @@ def search_doctors():
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DOCTOR_PROFILE_DIR = os.path.join(BASE_DIR, "../doctor-profile")
 
+@app.route('/doctor-profile')
+def symptom_checker():
+    return send_from_directory(os.path.join(os.path.dirname(__file__), '..', 'doctor-profile'), 'index.html')
+
 @app.route('/doctor-profile/<path:filename>')
 def doctor_profile_static(filename):
     return send_from_directory(DOCTOR_PROFILE_DIR, filename)
-
 
 @app.route('/api/doctors/<doctor_id>', methods=['GET'])
 def get_doctor(doctor_id):
