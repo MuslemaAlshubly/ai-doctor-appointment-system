@@ -5,8 +5,7 @@ from flask_cors import CORS
 from backend.db import db
 from datetime import datetime
 from flask_cors import CORS
-import os, json, re
-import requests
+from ai import call_gemini, parse_gemini_response
 
 app = Flask(__name__)
 CORS(app)
@@ -105,12 +104,10 @@ def check_symptoms():
     data = request.json
     symptoms = data.get('symptoms')
 
-    # Call Gemini instead of OpenAI
-    prompt = f"Given these symptoms: {symptoms}, suggest a likely diagnosis and doctor specialty."
-    result_text = _call(prompt)
+    prompt = f"Given these symptoms: {symptoms}, suggest a diagnosis and doctor specialty."
 
-    # Optionally parse JSON-like response
-    diagnosis, specialty = parse_gemini_response(result_text)
+    response_text = call_gemini(prompt)
+    diagnosis, specialty = parse_gemini_response(response_text)
 
     db.symptom_checks.insert_one({
         "symptoms": symptoms,
