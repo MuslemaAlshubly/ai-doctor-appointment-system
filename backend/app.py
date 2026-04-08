@@ -5,11 +5,10 @@ from flask_cors import CORS
 from backend.db import db
 from datetime import datetime
 from flask_cors import CORS
+import openai
 
 app = Flask(__name__)
 CORS(app)
-
-
 
 
 @app.route("/")
