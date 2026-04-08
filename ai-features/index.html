@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediAI — Smart Doctor Appointment System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── TOKENS ─────────────────────────────────── */
+    :root {
+      --bg:        #0b0f1a;
+      --surface:   #131929;
+      --card:      #1a2236;
+      --border:    #243050;
+      --accent:    #4f9cf9;
+      --accent2:   #38d9a9;
+      --warn:      #f9934f;
+      --text:      #e8edf5;
+      --muted:     #7a8aaa;
+      --radius:    14px;
+      --glow:      0 0 24px rgba(79,156,249,0.18);
+    }
+
+    /* ─── RESET ──────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── ANIMATED BACKGROUND ────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 80% 10%, rgba(79,156,249,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 10% 90%, rgba(56,217,169,0.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* ─── LAYOUT ─────────────────────────────────── */
+    .container { max-width: 980px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+    /* ─── HEADER ─────────────────────────────────── */
+    header {
+      padding: 32px 24px 0;
+      display: flex; align-items: center; gap: 14px;
+      position: relative; z-index: 1;
+      max-width: 980px; margin: 0 auto;
+    }
+    .logo-mark {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 12px;
+      display: grid; place-items: center;
+      font-size: 20px; flex-shrink: 0;
+      box-shadow: var(--glow);
+    }
+    .logo-text { font-family: 'Playfair Display', serif; font-size: 22px; letter-spacing: -0.5px; }
+    .logo-text span { color: var(--accent); }
+    .badge {
+      margin-left: auto;
+      font-size: 11px; font-weight: 500;
+      background: rgba(79,156,249,0.12);
+      color: var(--accent);
+      border: 1px solid rgba(79,156,249,0.3);
+      padding: 4px 10px; border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ─── HERO ───────────────────────────────────── */
+    .hero {
+      text-align: center;
+      padding: 60px 24px 48px;
+      position: relative; z-index: 1;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+    .hero h1 em { font-style: normal; color: var(--accent); }
+    .hero p { color: var(--muted); font-size: 17px; max-width: 520px; margin: 0 auto; line-height: 1.7; }
+
+    /* ─── TABS ───────────────────────────────────── */
+    .tabs {
+      display: flex; gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 5px;
+      max-width: 680px; margin: 0 auto 40px;
+      position: relative; z-index: 1;
+    }
+    .tab {
+      flex: 1; padding: 10px 16px;
+      border: none; background: transparent;
+      color: var(--muted); font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 500;
+      border-radius: 50px; cursor: pointer;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 0 16px rgba(79,156,249,0.4);
+    }
+    .tab-icon { font-size: 15px; }
+
+    /* ─── PANELS ─────────────────────────────────── */
+    .panel { display: none; animation: fadeUp 0.35s ease; }
+    .panel.active { display: block; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── CARD ───────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 30px;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px; margin-bottom: 6px;
+    }
+    .card-sub { color: var(--muted); font-size: 14px; margin-bottom: 22px; }
+
+    /* ─── FORM CONTROLS ──────────────────────────── */
+    textarea, input[type="text"], select {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      padding: 14px 16px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      resize: vertical;
+    }
+    textarea:focus, input[type="text"]:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,156,249,0.12);
+    }
+    textarea { min-height: 120px; }
+    label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 8px; letter-spacing: 0.3px; }
+
+    /* ─── BUTTONS ────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 24px;
+      border: none; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-primary {
+      background: var(--accent); color: #fff;
+      box-shadow: 0 4px 16px rgba(79,156,249,0.3);
+    }
+    .btn-primary:hover { background: #3a86e8; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(79,156,249,0.4); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-ghost {
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-success {
+      background: var(--accent2); color: #0b0f1a;
+      box-shadow: 0 4px 16px rgba(56,217,169,0.25);
+    }
+    .btn-success:hover { transform: translateY(-1px); }
+
+    /* ─── AI RESULT BOX ──────────────────────────── */
+    .ai-result {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 10px;
+      padding: 20px 22px;
+      margin-top: 20px;
+      font-size: 15px; line-height: 1.75;
+      display: none;
+      position: relative;
+    }
+    .ai-result.visible { display: block; animation: fadeUp 0.3s ease; }
+    .ai-result-header {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--accent); margin-bottom: 14px;
+    }
+    .ai-pulse {
+      width: 8px; height: 8px;
+      background: var(--accent2); border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.7); }
+    }
+
+    /* ─── LOADING DOTS ───────────────────────────── */
+    .dots { display: inline-flex; gap: 4px; }
+    .dots span {
+      width: 5px; height: 5px;
+      background: var(--accent); border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: 0.2s; }
+    .dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-6px); }
+    }
+
+    /* ─── SPECIALTY CHIPS ────────────────────────── */
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+    .chip {
+      padding: 6px 14px;
+      border-radius: 20px; font-size: 13px;
+      background: rgba(79,156,249,0.1);
+      border: 1px solid rgba(79,156,249,0.25);
+      color: var(--accent); cursor: pointer;
+      transition: all 0.15s;
+    }
+    .chip:hover { background: var(--accent); color: #fff; border-color: transparent; }
+
+    /* ─── DOCTOR CARDS ───────────────────────────── */
+    .doctor-grid { display: grid; gap: 14px; }
+    .doctor-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      display: flex; align-items: center; gap: 16px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+    .doctor-card:hover {
+      border-color: var(--accent);
+      box-shadow: var(--glow);
+    }
+    .doctor-avatar {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: grid; place-items: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .doctor-info { flex: 1; }
+    .doctor-name { font-weight: 500; font-size: 16px; margin-bottom: 3px; }
+    .doctor-spec { color: var(--accent); font-size: 13px; margin-bottom: 3px; }
+    .doctor-loc { color: var(--muted); font-size: 13px; }
+    .doctor-action { flex-shrink: 0; }
+
+    /* ─── TIME SLOTS ─────────────────────────────── */
+    .slots-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+    .slot {
+      padding: 8px 16px; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      font-size: 14px; cursor: pointer; transition: all 0.15s;
+      color: var(--text);
+    }
+    .slot:hover { border-color: var(--accent2); color: var(--accent2); }
+    .slot.selected { background: var(--accent2); border-color: transparent; color: #0b0f1a; font-weight: 600; }
+
+    /* ─── CHAT ───────────────────────────────────── */
+    .chat-window {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      height: 380px;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex; flex-direction: column; gap: 14px;
+      scroll-behavior: smooth;
+      margin-bottom: 14px;
+    }
+    .chat-window::-webkit-scrollbar { width: 4px; }
+    .chat-window::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .msg {
+      max-width: 80%; padding: 12px 16px;
+      border-radius: 14px; font-size: 14px; line-height: 1.65;
+      animation: fadeUp 0.25s ease;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: var(--accent); color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.ai {
+      align-self: flex-start;
+      background: var(--card); border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      color: var(--text);
+    }
+    .msg.ai .msg-label { font-size: 11px; font-weight: 600; color: var(--accent2); margin-bottom: 6px; letter-spacing: 0.5px; }
+    .chat-input-row { display: flex; gap: 10px; }
+    .chat-input-row input { flex: 1; }
+
+    /* ─── SYMPTOM TAGS ───────────────────────────── */
+    .symptom-tags { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0 16px; }
+    .sym-tag {
+      padding: 5px 12px; border-radius: 6px;
+      background: rgba(249,147,79,0.12);
+      border: 1px solid rgba(249,147,79,0.3);
+      color: var(--warn); font-size: 13px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .sym-tag:hover { background: var(--warn); color: #fff; border-color: transparent; }
+
+    /* ─── STATUS PILL ────────────────────────────── */
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 20px; font-size: 12px;
+    }
+    .status-pill.ok { background: rgba(56,217,169,0.12); color: var(--accent2); }
+    .status-pill.err { background: rgba(249,147,79,0.12); color: var(--warn); }
+
+    /* ─── DIVIDER ────────────────────────────────── */
+    .divider { height: 1px; background: var(--border); margin: 22px 0; }
+
+    /* ─── CONFIRM MODAL ──────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.65); backdrop-filter: blur(4px);
+      display: none; place-items: center;
+    }
+    .modal-overlay.open { display: grid; animation: fadeUp 0.25s ease; }
+    .modal {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 18px; padding: 36px;
+      max-width: 420px; width: 90%;
+      text-align: center;
+    }
+    .modal h3 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 10px; }
+    .modal p { color: var(--muted); font-size: 15px; margin-bottom: 24px; line-height: 1.6; }
+    .modal-actions { display: flex; gap: 12px; justify-content: center; }
+    .modal-icon { font-size: 40px; margin-bottom: 14px; }
+
+    /* ─── FOOTER NOTE ────────────────────────────── */
+    .footer-note {
+      text-align: center; padding: 40px 24px 50px;
+      color: var(--muted); font-size: 13px;
+      position: relative; z-index: 1;
+    }
+    .footer-note a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-icon">✅</div>
+    <h3>Appointment Confirmed</h3>
+    <p id="modal-msg">Your appointment has been booked successfully.</p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="closeModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="logo-mark">🩺</div>
+  <div class="logo-text">Medi<span>AI</span></div>
+  <div class="badge">AI-Powered</div>
+</header>
+
+<div class="hero container">
+  <h1>Your <em>intelligent</em> healthcare<br>companion</h1>
+  <p>Describe your symptoms, find the right specialist, and book your appointment — all in one place.</p>
+</div>
+
+<div class="container">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('symptom')" id="tab-symptom">
+      <span class="tab-icon">🔍</span> Symptom Checker
+    </button>
+    <button class="tab" onclick="switchTab('search')" id="tab-search">
+      <span class="tab-icon">👨‍⚕️</span> Find Doctor
+    </button>
+    <button class="tab" onclick="switchTab('book')" id="tab-book">
+      <span class="tab-icon">📅</span> Book Appointment
+    </button>
+    <button class="tab" onclick="switchTab('chat')" id="tab-chat">
+      <span class="tab-icon">💬</span> Medical Q&A
+    </button>
+  </div>
+
+  <!-- ─── PANEL 1: SYMPTOM CHECKER ─────────────────── -->
+  <div class="panel active" id="panel-symptom">
+    <div class="card">
+      <div class="card-title">AI Symptom Checker</div>
+      <div class="card-sub">Describe what you're feeling and our AI will suggest the right specialist for you.</div>
+
+      <label>Quick symptom picks</label>
+      <div class="symptom-tags">
+        <span class="sym-tag" onclick="addSymptom('chest pain')">💔 Chest pain</span>
+        <span class="sym-tag" onclick="addSymptom('headache and dizziness')">🤕 Headache & dizziness</span>
+        <span class="sym-tag" onclick="addSymptom('skin rash and itching')">🩹 Skin rash</span>
+        <span class="sym-tag" onclick="addSymptom('shortness of breath')">😮‍💨 Shortness of breath</span>
+        <span class="sym-tag" onclick="addSymptom('back pain')">🦴 Back pain</span>
+        <span class="sym-tag" onclick="addSymptom('stomach pain and nausea')">🤢 Stomach pain</span>
+        <span class="sym-tag" onclick="addSymptom('joint swelling and pain')">🦵 Joint pain</span>
+        <span class="sym-tag" onclick="addSymptom('blurred vision')">👁️ Blurred vision</span>
+      </div>
+
+      <label>Describe your symptoms in detail</label>
+      <textarea id="symptom-input" placeholder="e.g. I've had a persistent headache for 3 days, with nausea and sensitivity to light..."></textarea>
+
+      <div style="display:flex; gap:10px; margin-top:16px; align-items:center;">
+        <button class="btn btn-primary" onclick="checkSymptoms()" id="symptom-btn">
+          ✨ Analyze Symptoms
+        </button>
+        <button class="btn btn-ghost" onclick="clearSymptoms()">Clear</button>
+      </div>
+
+      <div class="ai-result" id="symptom-result">
+        <div class="ai-result-header">
+          <div class="ai-pulse"></div>
+          AI Analysis
+        </div>
+        <div id="symptom-result-text"></div>
+        <div class="divider"></div>
+        <button class="btn btn-ghost" style="font-size:13px" onclick="switchTab('search')">
+          → Find a specialist now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── PANEL 2: FIND DOCTOR ──────────────────────── -->
+  <div class="panel" id="panel-search">
+    <div class="card">
+      <div class="card-title">Smart Doctor Search</div>
+      <div class="card-sub">Search in plain language — our AI understands what you need.</div>
+
+      <label>What kind of doctor are you looking for?</label>
+      <div style="display:flex; gap:10px; margin-bottom:18px;">
+        <input type="text" id="search-input" placeholder='e.g. "heart specialist", "skin doctor near downtown"' />
+        <button class="btn btn-primary" onclick="searchDoctors()" id="search-btn" style="white-space:nowrap;">
+          🔎 Search
+        </button>
+      </div>
+
+      <div class="chips" id="spec-chips">
+        <span class="chip" onclick="quickSearch('Cardiology')">❤️ Cardiology</span>
+        <span class="chip" onclick="quickSearch('Dermatology')">🩹 Dermatology</span>
+        <span class="chip" onclick="quickSearch('Neurology')">🧠 Neurology</span>
+        <span class="chip" onclick="quickSearch('Orthopedics')">🦴 Orthopedics</span>
+        <span class="chip" onclick="quickSearch('Gastroenterology')">🫀 Gastro</span>
+        <span class="chip" onclick="quickSearch('Ophthalmology')">👁️ Eye</span>
+        <span class="chip" onclick="quickSearch('General Practice')">🩺 General</span>
+      </div>
+    </div>
+
+    <div id="search-loading" style="text-align:center; padding:24px; display:none;">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <p style="color:var(--muted); font-size:14px; margin-top:10px;">Finding the best doctors for you…</p>
+    </div>
+
+    <div class="doctor-grid" id="doctor-results"></div>
+  </div>
+
+  <!-- ─── PANEL 3: BOOK APPOINTMENT ────────────────── -->
+  <div class="panel" id="panel-book">
+    <div class="card">
+      <div class="card-title">Book an Appointment</div>
+      <div class="card-sub">Select your doctor and a time that works for you.</div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px;">
+        <div>
+          <label>Doctor ID</label>
+          <input type="text" id="book-doctor-id" placeholder="e.g. 1" />
+        </div>
+        <div>
+          <label>Your Name</label>
+          <input type="text" id="book-patient-name" placeholder="Full name" />
+        </div>
+      </div>
+
+      <label>Reason for visit (AI will help pick your slot)</label>
+      <textarea id="book-reason" placeholder="Brief description of why you're visiting…" style="min-height:80px;"></textarea>
+
+      <div style="margin-top:16px;">
+        <button class="btn btn-primary" onclick="loadSlots()" id="slots-btn">
+          📅 Show Available Slots
+        </button>
+      </div>
+    </div>
+
+    <div class="card" id="slots-card" style="display:none;">
+      <div class="card-title">Choose a Time Slot</div>
+      <div class="ai-result visible" id="ai-slot-suggestion" style="margin-bottom:16px; display:none;">
+        <div class="ai-result-header"><div class="ai-pulse"></div>AI Recommendation</div>
+        <div id="slot-suggestion-text"></div>
+      </div>
+      <div class="slots-grid" id="slots-grid"></div>
+      <div class="divider"></div>
+      <button class="btn btn-success" onclick="confirmBooking()" id="confirm-btn">
+        ✅ Confirm Appointment
+      </button>
+    </div>
+  </div>
+
+  <!-- ─── PANEL 4: MEDICAL Q&A CHAT ────────────────── -->
+  <div class="panel" id="panel-chat">
+    <div class="card" style="padding-bottom:20px;">
+      <div class="card-title">Medical Q&A Assistant</div>
+      <div class="card-sub">Ask health questions — get clear, evidence-based answers. Not a substitute for professional medical advice.</div>
+
+      <div class="chat-window" id="chat-window">
+        <div class="msg ai">
+          <div class="msg-label">MEDIAI ASSISTANT</div>
+          Hello! I'm your medical Q&A assistant. You can ask me about symptoms, medications, health conditions, or general wellness. How can I help you today?
+        </div>
+      </div>
+
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Ask a health question…" onkeydown="if(event.key==='Enter') sendChat()" />
+        <button class="btn btn-primary" onclick="sendChat()" id="chat-btn">Send</button>
+      </div>
+
+      <div style="margin-top:12px;">
+        <p style="color:var(--muted); font-size:12px; margin-bottom:8px;">Quick questions:</p>
+        <div class="chips">
+          <span class="chip" onclick="quickChat('What are the symptoms of diabetes?')">Diabetes symptoms</span>
+          <span class="chip" onclick="quickChat('How do I lower my blood pressure naturally?')">Lower blood pressure</span>
+          <span class="chip" onclick="quickChat('What vaccines do adults need?')">Adult vaccines</span>
+          <span class="chip" onclick="quickChat('When should I see a doctor for a fever?')">Fever guidance</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer-note">
+  ⚠️ MediAI is an AI assistant and does not replace professional medical advice. Always consult a licensed physician.<br>
+  Powered by Claude AI · <span id="api-status"></span>
+</div>
+
+<script>
+// ─── CONFIG ────────────────────────────────────────────────
+const BACKEND_URL = window.BACKEND_URL || "http://localhost:5000";
+const API_URL     = "https://api.anthropic.com/v1/messages";
+
+// The API key is injected server-side OR set here for local dev.
+// In production: Flask injects it via a /api/config endpoint or template variable.
+let API_KEY = window.API_KEY || "";
+
+// On load, try to fetch the key from the backend (backend reads it from .env)
+(async () => {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/config`);
+    if (res.ok) {
+      const data = await res.json();
+      API_KEY = data.anthropic_key || "";
+      document.getElementById("api-status").innerHTML =
+        API_KEY
+          ? '<span class="status-pill ok">● AI Connected</span>'
+          : '<span class="status-pill err">● API Key Missing</span>';
+    }
+  } catch {
+    document.getElementById("api-status").innerHTML =
+      '<span class="status-pill err">● Backend Offline — AI features limited</span>';
+  }
+})();
+
+// ─── TABS ───────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+// ─── CLAUDE CALL ────────────────────────────────────────────
+async function callClaude(systemPrompt, userMessage) {
+  if (!API_KEY) throw new Error("No API key configured.");
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": API_KEY,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-calls": "true"
+    },
+    body: JSON.stringify({
+      model: "claude-opus-4-5",
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userMessage }]
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API error ${res.status}`);
+  }
+  const data = await res.json();
+  return data.content[0].text;
+}
+
+// Format markdown-like text into HTML
+function formatText(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/s, '<ul style="padding-left:18px;margin:8px 0">$1</ul>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+
+// ─── 1. SYMPTOM CHECKER ─────────────────────────────────────
+function addSymptom(text) {
+  const input = document.getElementById('symptom-input');
+  if (input.value && !input.value.endsWith(' ')) input.value += ', ';
+  input.value += text;
+  input.focus();
+}
+
+function clearSymptoms() {
+  document.getElementById('symptom-input').value = '';
+  document.getElementById('symptom-result').classList.remove('visible');
+}
+
+async function checkSymptoms() {
+  const symptoms = document.getElementById('symptom-input').value.trim();
+  if (!symptoms) { alert('Please describe your symptoms first.'); return; }
+
+  const btn = document.getElementById('symptom-btn');
+  const result = document.getElementById('symptom-result');
+  const resultText = document.getElementById('symptom-result-text');
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>';
+  resultText.innerHTML = '';
+  result.classList.add('visible');
+  resultText.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>';
+
+  try {
+    const system = `You are a medical triage assistant. Given a patient's symptoms, provide:
+1. A brief assessment of what might be going on (2-3 sentences, non-alarmist)
+2. The type of specialist they should see (e.g. Cardiologist, Dermatologist, General Practitioner)
+3. Urgency level: Routine / Soon (within a week) / Urgent (within 24-48h) / Emergency (go to ER now)
+4. 2-3 self-care tips while waiting for the appointment
+
+Use clear, empathetic language. Always end with: "This is informational only — please consult a licensed physician for diagnosis."
+Format your response with clear sections using **bold** headers.`;
+
+    const answer = await callClaude(system, `Patient symptoms: ${symptoms}`);
+    resultText.innerHTML = formatText(answer);
+  } catch (e) {
+    resultText.innerHTML = `<span style="color:var(--warn)">⚠️ ${e.message}</span>`;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '✨ Analyze Symptoms';
+}
+
+// ─── 2. DOCTOR SEARCH ───────────────────────────────────────
+function quickSearch(spec) {
+  document.getElementById('search-input').value = spec;
+  searchDoctors();
+}
+
+async function searchDoctors() {
+  const query = document.getElementById('search-input').value.trim();
+  if (!query) return;
+
+  const loading = document.getElementById('search-loading');
+  const results = document.getElementById('doctor-results');
+  const btn = document.getElementById('search-btn');
+
+  loading.style.display = 'block';
+  results.innerHTML = '';
+  btn.disabled = true;
+
+  // Step 1: Use AI to extract the specialty from natural language
+  let specialty = query;
+  try {
+    const extracted = await callClaude(
+      `Extract the medical specialty from the user's search query. Return ONLY the specialty name (e.g. "Cardiology", "Dermatology", "General Practice"). No explanation.`,
+      query
+    );
+    specialty = extracted.trim().replace(/[^a-zA-Z ]/g, '');
+  } catch { /* fallback to raw query */ }
+
+  // Step 2: Fetch from backend
+  try {
+    const res = await fetch(`${BACKEND_URL}/search-doctors?specialty=${encodeURIComponent(specialty)}`);
+    const doctors = await res.json();
+
+    loading.style.display = 'none';
+    btn.disabled = false;
+
+    if (!doctors.length) {
+      results.innerHTML = `
+        <div class="card" style="text-align:center; color:var(--muted)">
+          <p style="font-size:32px; margin-bottom:12px">🔍</p>
+          <p>No doctors found for "<strong style="color:var(--text)">${specialty}</strong>".</p>
+          <p style="font-size:13px; margin-top:8px;">Try a different specialty or check back later.</p>
+        </div>`;
+      return;
+    }
+
+    results.innerHTML = doctors.map(doc => `
+      <div class="doctor-card" onclick="selectDoctor('${doc._id}', '${doc.name || "Doctor"}')">
+        <div class="doctor-avatar">👨‍⚕️</div>
+        <div class="doctor-info">
+          <div class="doctor-name">${doc.name || "Dr. " + doc._id}</div>
+          <div class="doctor-spec">${doc.specialty || specialty}</div>
+          <div class="doctor-loc">📍 ${doc.location || "Location not specified"}</div>
+        </div>
+        <div class="doctor-action">
+          <button class="btn btn-ghost" style="font-size:13px">Book →</button>
+        </div>
+      </div>
+    `).join('');
+
+  } catch (e) {
+    loading.style.display = 'none';
+    btn.disabled = false;
+    results.innerHTML = `<div class="card" style="color:var(--warn)">⚠️ Could not reach backend: ${e.message}</div>`;
+  }
+}
+
+function selectDoctor(id, name) {
+  document.getElementById('book-doctor-id').value = id;
+  switchTab('book');
+}
+
+// ─── 3. BOOKING ─────────────────────────────────────────────
+let selectedSlot = null;
+
+async function loadSlots() {
+  const doctorId = document.getElementById('book-doctor-id').value.trim();
+  const reason = document.getElementById('book-reason').value.trim();
+  if (!doctorId) { alert('Please enter a Doctor ID.'); return; }
+
+  const btn = document.getElementById('slots-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>';
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/doctors/${doctorId}/slots`);
+    const slots = await res.json();
+
+    const card = document.getElementById('slots-card');
+    const grid = document.getElementById('slots-grid');
+    card.style.display = 'block';
+    selectedSlot = null;
+
+    grid.innerHTML = slots.map(s => `
+      <div class="slot" onclick="pickSlot(this, '${s.time}')">${s.time}</div>
+    `).join('') || '<p style="color:var(--muted); font-size:14px">No slots available for this doctor.</p>';
+
+    // AI slot recommendation
+    if (slots.length && reason) {
+      try {
+        const suggestion = await callClaude(
+          `You are a scheduling assistant. Given the patient's reason for visit and available time slots, recommend the best slot and briefly explain why (1-2 sentences). Be concise and friendly.`,
+          `Reason: ${reason}\nAvailable slots: ${slots.map(s => s.time).join(', ')}`
+        );
+        const sugBox = document.getElementById('ai-slot-suggestion');
+        document.getElementById('slot-suggestion-text').innerHTML = formatText(suggestion);
+        sugBox.style.display = 'block';
+      } catch { /* silent fail */ }
+    }
+
+  } catch (e) {
+    alert('Could not load slots: ' + e.message);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '📅 Show Available Slots';
+}
+
+function pickSlot(el, time) {
+  document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedSlot = time;
+}
+
+async function confirmBooking() {
+  if (!selectedSlot) { alert('Please select a time slot.'); return; }
+  const doctorId = document.getElementById('book-doctor-id').value.trim();
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/appointments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ doctor_id: doctorId, time: selectedSlot })
+    });
+
+    if (res.ok) {
+      document.getElementById('modal-msg').textContent =
+        `Your appointment is confirmed for ${selectedSlot} with Doctor ${doctorId}.`;
+      document.getElementById('modal').classList.add('open');
+    } else {
+      alert('Booking failed. Please try again.');
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+// ─── 4. MEDICAL Q&A CHAT ────────────────────────────────────
+const chatHistory = [];
+
+function quickChat(q) {
+  document.getElementById('chat-input').value = q;
+  sendChat();
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  const window_ = document.getElementById('chat-window');
+  const btn = document.getElementById('chat-btn');
+
+  input.value = '';
+  btn.disabled = true;
+
+  // User bubble
+  appendMsg('user', msg);
+  chatHistory.push({ role: 'user', content: msg });
+
+  // Thinking indicator
+  const thinkId = 'think-' + Date.now();
+  window_.insertAdjacentHTML('beforeend', `
+    <div class="msg ai" id="${thinkId}">
+      <div class="msg-label">MEDIAI ASSISTANT</div>
+      <div class="dots"><span></span><span></span><span></span></div>
+    </div>`);
+  window_.scrollTop = window_.scrollHeight;
+
+  try {
+    const system = `You are MediAI, a knowledgeable medical Q&A assistant. Provide clear, evidence-based health information. 
+Be warm and empathetic. Always recommend consulting a licensed physician for diagnosis or treatment.
+Keep answers concise but thorough. Use **bold** for key terms. Format lists with "- " prefix.`;
+
+    // Build messages array for multi-turn
+    const messages = chatHistory.slice(-10); // last 10 turns
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": API_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-calls": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-opus-4-5",
+        max_tokens: 1024,
+        system,
+        messages
+      })
+    });
+
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || "I couldn't process that. Please try again.";
+    chatHistory.push({ role: 'assistant', content: reply });
+
+    document.getElementById(thinkId).innerHTML = `
+      <div class="msg-label">MEDIAI ASSISTANT</div>
+      ${formatText(reply)}`;
+  } catch (e) {
+    document.getElementById(thinkId).innerHTML = `
+      <div class="msg-label">MEDIAI ASSISTANT</div>
+      <span style="color:var(--warn)">⚠️ ${e.message}</span>`;
+  }
+
+  btn.disabled = false;
+  window_.scrollTop = window_.scrollHeight;
+}
+
+function appendMsg(role, text) {
+  const window_ = document.getElementById('chat-window');
+  window_.insertAdjacentHTML('beforeend',
+    `<div class="msg ${role}">${role === 'user' ? text : formatText(text)}</div>`);
+  window_.scrollTop = window_.scrollHeight;
+}
+</script>
+</body>
+</html>

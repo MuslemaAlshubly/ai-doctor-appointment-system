@@ -25,6 +25,35 @@ def test_db():
     db.test.insert_one({"msg": "hello"})
     return "DB works"
 
+
+# -------------------------
+# AI Features Config
+# -------------------------
+ 
+@app.route("/api/config", methods=["GET"])
+def get_config():
+    """
+    Safely exposes the Anthropic API key to the frontend.
+    The key is read from the .env file / environment variable.
+    In production, restrict this endpoint with authentication.
+    """
+    return jsonify({
+        "anthropic_key": os.getenv("API_KEY", "")
+    })
+ 
+# -------------------------
+# AI Features Frontend
+# -------------------------
+ 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+AI_FEATURES_DIR = os.path.join(BASE_DIR, "../ai-features")
+ 
+@app.route("/ai")
+def ai_frontend():
+    return send_from_directory(AI_FEATURES_DIR, "index.html")
+
+
+
 # -------------------------
 # Doctor Search Feature
 # -------------------------
