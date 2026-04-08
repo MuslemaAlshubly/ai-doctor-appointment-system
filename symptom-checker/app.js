@@ -19,31 +19,30 @@ async function checkSymptoms() {
     document.getElementById("result-section").style.display = "none";
 
     try {
-    const response = await fetch(`${API_URL}/api/symptom-checker`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symptoms })
-    });
+        const response = await fetch(`${API_URL}/api/symptom-checker`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ symptoms })
+        });
 
-    if (!response.ok) {
-        const err = await response.text();
-        console.error("Server error:", err);
-        alert("Server error. Check console for details.");
-        return;
-    }
+        const data = await response.json();
+        console.log("API response:", data);
 
-    const data = await response.json();
-    document.getElementById("diagnosis").textContent = data.diagnosis;
-    document.getElementById("recommendation").textContent = "Recommended Specialty: " + data.specialty;
-    document.getElementById("urgency").textContent = "Urgency: " + data.urgency;
-    document.getElementById("explanation").textContent = data.explanation;
+        if (data.error) {
+            alert("API Error: " + data.error);
+            return;
+        }
 
-    
+        document.getElementById("diagnosis").textContent = data.diagnosis;
+        document.getElementById("recommendation").textContent = "Recommended Specialty: " + data.specialty;
+        document.getElementById("urgency").textContent = "Urgency: " + data.urgency;
+        document.getElementById("explanation").textContent = data.explanation;
+        document.getElementById("result-section").style.display = "block";
 
     } catch (error) {
-        alert("Failed to check symptoms. Please try again.");
+        alert("Failed: " + error.message);
         console.error(error);
-    } finally {
+    } finally {                                          // ✅ inside the function now
         document.getElementById("loading").style.display = "none";
     }
 }
