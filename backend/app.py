@@ -2,10 +2,11 @@ import os
 
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
-from  db import db
+from backend.db import db
 from datetime import datetime
 from flask_cors import CORS
-import openai
+import os, json, re
+import requests
 
 app = Flask(__name__)
 CORS(app)
@@ -104,19 +105,12 @@ def check_symptoms():
     data = request.json
     symptoms = data.get('symptoms')
 
-    client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+    # Call Gemini instead of OpenAI
+    prompt = f"Given these symptoms: {symptoms}, suggest a likely diagnosis and doctor specialty."
+    result_text = _call(prompt)
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "You are a medical assistant. Given symptoms, provide a brief diagnosis and recommend a doctor specialty. Format: Diagnosis: [diagnosis]. Specialty: [specialty]."},
-            {"role": "user", "content": f"My symptoms are: {symptoms}"}
-        ]
-    )
-
-    result = response.choices[0].message.content
-    diagnosis = result.split("Specialty:")[0].replace("Diagnosis:", "").strip()
-    specialty = result.split("Specialty:")[1].strip() if "Specialty:" in result else "General Practitioner"
+    # Optionally parse JSON-like response
+    diagnosis, specialty = parse_gemini_response(result_text)
 
     db.symptom_checks.insert_one({
         "symptoms": symptoms,
