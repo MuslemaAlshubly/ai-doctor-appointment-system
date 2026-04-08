@@ -92,7 +92,7 @@ def book_appointment():
 # -------------------------
 
 @app.route('/symptom-checker')
-def symptom_checker():
+def symptom_checker_page():
     return send_from_directory(os.path.join(os.path.dirname(__file__), '..', 'symptom-checker'), 'index.html')
 
 @app.route('/symptom-checker/<path:filename>')
