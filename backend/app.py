@@ -83,6 +83,46 @@ def book_appointment():
     })
     return jsonify({"message": f"Appointment booked for {data['time']}"}), 201
 
+
+# -------------------------
+# AI Symptom Checker
+# -------------------------
+
+@app.route('/symptom-checker')
+def symptom_checker():
+    return send_from_directory(os.path.join(os.path.dirname(__file__), '..', 'symptom-checker'), 'index.html')
+
+@app.route('/symptom-checker/<path:filename>')
+def symptom_checker_static(filename):
+    return send_from_directory(os.path.join(os.path.dirname(__file__), '..', 'symptom-checker'), filename)
+
+@app.route('/api/symptom-checker', methods=['POST'])
+def check_symptoms():
+    data = request.json
+    symptoms = data.get('symptoms')
+
+    client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a medical assistant. Given symptoms, provide a brief diagnosis and recommend a doctor specialty. Format: Diagnosis: [diagnosis]. Specialty: [specialty]."},
+            {"role": "user", "content": f"My symptoms are: {symptoms}"}
+        ]
+    )
+
+    result = response.choices[0].message.content
+    diagnosis = result.split("Specialty:")[0].replace("Diagnosis:", "").strip()
+    specialty = result.split("Specialty:")[1].strip() if "Specialty:" in result else "General Practitioner"
+
+    db.symptom_checks.insert_one({
+        "symptoms": symptoms,
+        "diagnosis": diagnosis,
+        "specialty": specialty
+    })
+
+    return jsonify({"diagnosis": diagnosis, "specialty": specialty})
+
 if __name__ == '__main__':
     db.init_db()
     port = int(os.environ.get('PORT', 5000))
