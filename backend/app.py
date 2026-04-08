@@ -10,7 +10,7 @@ from ai import call_gemini, parse_gemini_response, build_symptom_prompt
 app = Flask(__name__)
 CORS(app)
 
-
+#test change
 @app.route("/")
 def home():
     return "App is running"
