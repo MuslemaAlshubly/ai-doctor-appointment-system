@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, redirect, request, send_from_directory
 from flask_cors import CORS
 from backend.db import db
 from datetime import datetime
@@ -9,48 +9,83 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+import requests as http_requests
 
-
+# -------------------------
+# Core Routes
+# -------------------------
+ 
 @app.route("/")
 def home():
-    return "App is running"
-
+    return redirect("/ai")
+ 
 @app.route("/health")
 def health():
     return "OK"
-
+ 
 @app.route("/test-db")
 def test_db():
     db.test.insert_one({"msg": "hello"})
     return "DB works"
-
-
-# -------------------------
-# AI Features Config
-# -------------------------
- 
-@app.route("/api/config", methods=["GET"])
-def get_config():
-    """
-    Safely exposes the Anthropic API key to the frontend.
-    The key is read from the .env file / environment variable.
-    In production, restrict this endpoint with authentication.
-    """
-    return jsonify({
-        "anthropic_key": os.getenv("API_KEY", "")
-    })
  
 # -------------------------
-# AI Features Frontend
+# AI Frontend
 # -------------------------
  
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 AI_FEATURES_DIR = os.path.join(BASE_DIR, "../ai-features")
  
 @app.route("/ai")
 def ai_frontend():
     return send_from_directory(AI_FEATURES_DIR, "index.html")
+ 
+# -------------------------
+# Gemini AI Proxy
+# -------------------------
+ 
+@app.route("/api/claude", methods=["POST"])
+def gemini_proxy():
+    data = request.json
+    api_key = os.getenv("API_KEY", "")
+ 
+    if not api_key:
+        return jsonify({"error": {"message": "API_KEY not set in .env"}}), 500
+ 
+    system = data.get("system", "")
+    messages = data.get("messages", [])
+ 
+    contents = []
+    for i, msg in enumerate(messages):
+        role = "user" if msg["role"] == "user" else "model"
+        text = msg["content"]
+        if i == 0 and system:
+            text = f"{system}\n\n{text}"
+        contents.append({"role": role, "parts": [{"text": text}]})
+ 
+    res = http_requests.post(
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}",
+        json={"contents": contents}
+    )
+ 
+    gemini_data = res.json()
+ 
+    try:
+        text = gemini_data["candidates"][0]["content"]["parts"][0]["text"]
+        return jsonify({"content": [{"text": text}]})
+    except Exception:
+        return jsonify({"error": {"message": str(gemini_data)}}), 500
+ 
+# -------------------------
+# AI Config
+# -------------------------
+ 
+@app.route("/api/config", methods=["GET"])
+def get_config():
+    return jsonify({
+        "gemini_key": os.getenv("API_KEY", "")
+    })
+ 
 
 
 

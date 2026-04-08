@@ -559,27 +559,17 @@
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
 const BACKEND_URL = window.BACKEND_URL || "http://localhost:5000";
-const API_URL     = "https://api.anthropic.com/v1/messages";
 
-// The API key is injected server-side OR set here for local dev.
-// In production: Flask injects it via a /api/config endpoint or template variable.
-let API_KEY = window.API_KEY || "";
-
-// On load, try to fetch the key from the backend (backend reads it from .env)
 (async () => {
   try {
     const res = await fetch(`${BACKEND_URL}/api/config`);
-    if (res.ok) {
-      const data = await res.json();
-      API_KEY = data.anthropic_key || "";
-      document.getElementById("api-status").innerHTML =
-        API_KEY
-          ? '<span class="status-pill ok">● AI Connected</span>'
-          : '<span class="status-pill err">● API Key Missing</span>';
-    }
+    const data = await res.json();
+    document.getElementById("api-status").innerHTML = data.gemini_key
+      ? '<span class="status-pill ok">● AI Connected</span>'
+      : '<span class="status-pill err">● API_KEY missing in .env</span>';
   } catch {
     document.getElementById("api-status").innerHTML =
-      '<span class="status-pill err">● Backend Offline — AI features limited</span>';
+      '<span class="status-pill err">● Backend Offline</span>';
   }
 })();
 
@@ -591,33 +581,20 @@ function switchTab(name) {
   document.getElementById('panel-' + name).classList.add('active');
 }
 
-// ─── CLAUDE CALL ────────────────────────────────────────────
-async function callClaude(systemPrompt, userMessage) {
-  if (!API_KEY) throw new Error("No API key configured.");
-  const res = await fetch(API_URL, {
+// ─── AI CALL via Flask/Gemini proxy ─────────────────────────
+async function callClaude(systemPrompt, userMessage, history = []) {
+  const messages = [...history, { role: "user", content: userMessage }];
+  const res = await fetch(`${BACKEND_URL}/api/claude`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": API_KEY,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-calls": "true"
-    },
-    body: JSON.stringify({
-      model: "claude-opus-4-5",
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userMessage }]
-    })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ system: systemPrompt, messages, max_tokens: 1024 })
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || `API error ${res.status}`);
-  }
   const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
   return data.content[0].text;
 }
 
-// Format markdown-like text into HTML
+// ─── FORMAT TEXT ─────────────────────────────────────────────
 function formatText(text) {
   return text
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -651,7 +628,6 @@ async function checkSymptoms() {
 
   btn.disabled = true;
   btn.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>';
-  resultText.innerHTML = '';
   result.classList.add('visible');
   resultText.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>';
 
@@ -661,7 +637,6 @@ async function checkSymptoms() {
 2. The type of specialist they should see (e.g. Cardiologist, Dermatologist, General Practitioner)
 3. Urgency level: Routine / Soon (within a week) / Urgent (within 24-48h) / Emergency (go to ER now)
 4. 2-3 self-care tips while waiting for the appointment
-
 Use clear, empathetic language. Always end with: "This is informational only — please consult a licensed physician for diagnosis."
 Format your response with clear sections using **bold** headers.`;
 
@@ -693,17 +668,15 @@ async function searchDoctors() {
   results.innerHTML = '';
   btn.disabled = true;
 
-  // Step 1: Use AI to extract the specialty from natural language
   let specialty = query;
   try {
     const extracted = await callClaude(
-      `Extract the medical specialty from the user's search query. Return ONLY the specialty name (e.g. "Cardiology", "Dermatology", "General Practice"). No explanation.`,
+      'Extract the medical specialty from the user\'s search query. Return ONLY the specialty name (e.g. "Cardiology", "Dermatology", "General Practice"). No explanation.',
       query
     );
     specialty = extracted.trim().replace(/[^a-zA-Z ]/g, '');
   } catch { /* fallback to raw query */ }
 
-  // Step 2: Fetch from backend
   try {
     const res = await fetch(`${BACKEND_URL}/search-doctors?specialty=${encodeURIComponent(specialty)}`);
     const doctors = await res.json();
@@ -772,11 +745,10 @@ async function loadSlots() {
       <div class="slot" onclick="pickSlot(this, '${s.time}')">${s.time}</div>
     `).join('') || '<p style="color:var(--muted); font-size:14px">No slots available for this doctor.</p>';
 
-    // AI slot recommendation
     if (slots.length && reason) {
       try {
         const suggestion = await callClaude(
-          `You are a scheduling assistant. Given the patient's reason for visit and available time slots, recommend the best slot and briefly explain why (1-2 sentences). Be concise and friendly.`,
+          'You are a scheduling assistant. Recommend the best available slot for the patient based on their reason for visit. Be brief and friendly (1-2 sentences).',
           `Reason: ${reason}\nAvailable slots: ${slots.map(s => s.time).join(', ')}`
         );
         const sugBox = document.getElementById('ai-slot-suggestion');
@@ -839,51 +811,30 @@ async function sendChat() {
   const msg = input.value.trim();
   if (!msg) return;
 
-  const window_ = document.getElementById('chat-window');
+  const chatWindow = document.getElementById('chat-window');
   const btn = document.getElementById('chat-btn');
 
   input.value = '';
   btn.disabled = true;
 
-  // User bubble
   appendMsg('user', msg);
   chatHistory.push({ role: 'user', content: msg });
 
-  // Thinking indicator
   const thinkId = 'think-' + Date.now();
-  window_.insertAdjacentHTML('beforeend', `
+  chatWindow.insertAdjacentHTML('beforeend', `
     <div class="msg ai" id="${thinkId}">
       <div class="msg-label">MEDIAI ASSISTANT</div>
       <div class="dots"><span></span><span></span><span></span></div>
     </div>`);
-  window_.scrollTop = window_.scrollHeight;
+  chatWindow.scrollTop = chatWindow.scrollHeight;
 
   try {
-    const system = `You are MediAI, a knowledgeable medical Q&A assistant. Provide clear, evidence-based health information. 
+    const system = `You are MediAI, a knowledgeable medical Q&A assistant. Provide clear, evidence-based health information.
 Be warm and empathetic. Always recommend consulting a licensed physician for diagnosis or treatment.
 Keep answers concise but thorough. Use **bold** for key terms. Format lists with "- " prefix.`;
 
-    // Build messages array for multi-turn
-    const messages = chatHistory.slice(-10); // last 10 turns
-
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": API_KEY,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-calls": "true"
-      },
-      body: JSON.stringify({
-        model: "claude-opus-4-5",
-        max_tokens: 1024,
-        system,
-        messages
-      })
-    });
-
-    const data = await res.json();
-    const reply = data.content?.[0]?.text || "I couldn't process that. Please try again.";
+    const history = chatHistory.slice(-10);
+    const reply = await callClaude(system, msg, history.slice(0, -1));
     chatHistory.push({ role: 'assistant', content: reply });
 
     document.getElementById(thinkId).innerHTML = `
@@ -896,14 +847,14 @@ Keep answers concise but thorough. Use **bold** for key terms. Format lists with
   }
 
   btn.disabled = false;
-  window_.scrollTop = window_.scrollHeight;
+  chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
 function appendMsg(role, text) {
-  const window_ = document.getElementById('chat-window');
-  window_.insertAdjacentHTML('beforeend',
+  const chatWindow = document.getElementById('chat-window');
+  chatWindow.insertAdjacentHTML('beforeend',
     `<div class="msg ${role}">${role === 'user' ? text : formatText(text)}</div>`);
-  window_.scrollTop = window_.scrollHeight;
+  chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 </script>
 </body>
