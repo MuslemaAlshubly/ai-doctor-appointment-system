@@ -5,7 +5,7 @@ from flask_cors import CORS
 from backend.db import db
 from datetime import datetime
 from flask_cors import CORS
-from ai import call_gemini, parse_gemini_response
+from ai import call_gemini, parse_gemini_response, build_symptom_prompt
 
 app = Flask(__name__)
 CORS(app)
@@ -99,23 +99,13 @@ def symptom_checker():
 def symptom_checker_static(filename):
     return send_from_directory(os.path.join(os.path.dirname(__file__), '..', 'symptom-checker'), filename)
 
-@app.route('/api/symptom-checker', methods=['POST'])
-def check_symptoms():
-    data = request.json
-    symptoms = data.get('symptoms')
-
-    prompt = f"Given these symptoms: {symptoms}, suggest a diagnosis and doctor specialty."
-
-    response_text = call_gemini(prompt)
-    diagnosis, specialty = parse_gemini_response(response_text)
-
-    db.symptom_checks.insert_one({
-        "symptoms": symptoms,
-        "diagnosis": diagnosis,
-        "specialty": specialty
-    })
-
-    return jsonify({"diagnosis": diagnosis, "specialty": specialty})
+@app.route("/api/symptom-checker", methods=["POST"])
+def symptom_checker():
+    symptoms = request.json.get("symptoms", "")
+    prompt = build_symptom_prompt(symptoms)
+    raw = call_gemini(prompt)
+    result = parse_gemini_response(raw)
+    return jsonify(result)
 
 if __name__ == '__main__':
     db.init_db()
