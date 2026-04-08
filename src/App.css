@@ -1,0 +1,9 @@
+.app-container {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+}
