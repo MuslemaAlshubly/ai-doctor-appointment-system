@@ -2,7 +2,7 @@ import os
 
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
-from backend.db import db
+from  db import db
 from datetime import datetime
 from flask_cors import CORS
 import openai
@@ -54,7 +54,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DOCTOR_PROFILE_DIR = os.path.join(BASE_DIR, "../doctor-profile")
 
 @app.route('/doctor-profile')
-def symptom_checker():
+def doctor_profile_page():
     return send_from_directory(os.path.join(os.path.dirname(__file__), '..', 'doctor-profile'), 'index.html')
 
 @app.route('/doctor-profile/<path:filename>')
