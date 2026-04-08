@@ -43,4 +43,23 @@ def parse_gemini_response(text: str) -> dict:
             "urgency": "Routine",
             "explanation": text  # fallback: show raw response
         }
+    
+def build_symptom_prompt(symptoms: str) -> str:
+    return f"""You are a medical triage assistant. A patient has reported the following symptoms:
+
+"{symptoms}"
+
+Based on these symptoms, provide:
+1. A likely diagnosis or differential diagnosis (most probable condition)
+2. The appropriate medical specialty to consult
+3. Urgency level: Emergency / Urgent / Routine
+4. A brief explanation (2-3 sentences) for the patient
+
+Respond ONLY in this exact JSON format:
+{{
+  "diagnosis": "...",
+  "specialty": "...",
+  "urgency": "...",
+  "explanation": "..."
+}}"""
 
