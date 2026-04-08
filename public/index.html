@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Doctor Appointment System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app"></div>
+
+    <!-- Auth Pages -->
+    <div id="login-page" class="page hidden">
+        <div class="auth-container">
+            <div class="auth-card">
+                <h1>Welcome Back</h1>
+                <p>AI Doctor Appointment System</p>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" placeholder="your@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                </form>
+                <p class="auth-switch">
+                    Don't have an account? <a href="#" onclick="app.showPage('register')">Sign Up</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div id="register-page" class="page hidden">
+        <div class="auth-container">
+            <div class="auth-card">
+                <h1>Create Account</h1>
+                <p>Join AI Doctor System</p>
+                <form id="register-form">
+                    <div class="form-group">
+                        <label for="register-name">Full Name</label>
+                        <input type="text" id="register-name" placeholder="John Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">Email</label>
+                        <input type="email" id="register-email" placeholder="your@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Password</label>
+                        <input type="password" id="register-password" placeholder="Password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-phone">Phone Number</label>
+                        <input type="tel" id="register-phone" placeholder="+1 (555) 000-0000" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+                </form>
+                <p class="auth-switch">
+                    Already have an account? <a href="#" onclick="app.showPage('login')">Sign In</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="main-app" class="main-app hidden">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>🏥 AI Doctor</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" onclick="app.showPage('dashboard'); return false;">
+                    <span class="icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" onclick="app.showPage('book-appointment'); return false;">
+                    <span class="icon">📅</span>
+                    <span>Book Appointment</span>
+                </a>
+                <a href="#" class="nav-item" onclick="app.showPage('my-appointments'); return false;">
+                    <span class="icon">📋</span>
+                    <span>My Appointments</span>
+                </a>
+                <a href="#" class="nav-item" onclick="app.showPage('ai-consultation'); return false;">
+                    <span class="icon">🤖</span>
+                    <span>AI Consultation</span>
+                </a>
+                <a href="#" class="nav-item" onclick="app.showPage('profile'); return false;">
+                    <span class="icon">👤</span>
+                    <span>Profile</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn btn-logout" onclick="app.logout()">Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-content">
+                    <h1 id="page-title">Dashboard</h1>
+                    <div class="user-info">
+                        <span id="user-name">User</span>
+                        <span class="badge">Patient</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Scrollable Content Area -->
+            <div class="content-area">
+            <!-- Dashboard Page -->
+            <div id="dashboard" class="content-page active">
+                <div class="container">
+                    <div class="welcome-section">
+                        <h2>Welcome, <span id="welcome-name">User</span>!</h2>
+                        <p>Manage your doctor appointments and get AI-powered medical guidance</p>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">📅</div>
+                            <div class="stat-info">
+                                <h3 id="upcoming-count">0</h3>
+                                <p>Upcoming Appointments</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-info">
+                                <h3 id="completed-count">0</h3>
+                                <p>Completed Appointments</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🤖</div>
+                            <div class="stat-info">
+                                <h3 id="ai-queries-count">0</h3>
+                                <p>AI Consultations</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <button class="btn btn-primary" onclick="app.showPage('book-appointment')">
+                            📅 Book New Appointment
+                        </button>
+                        <button class="btn btn-secondary" onclick="app.showPage('ai-consultation')">
+                            🤖 Ask AI Doctor
+                        </button>
+                    </div>
+
+                    <div class="upcoming-section">
+                        <h3>Upcoming Appointments</h3>
+                        <div id="upcoming-appointments-list" class="appointments-list">
+                            <p class="empty-state">No upcoming appointments</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Book Appointment Page -->
+            <div id="book-appointment" class="content-page">
+                <div class="container">
+                    <h2>Book an Appointment</h2>
+                    <div class="form-container">
+                        <form id="appointment-form">
+                            <div class="form-group">
+                                <label for="doctor-select">Select Doctor</label>
+                                <select id="doctor-select" required>
+                                    <option value="">Choose a doctor...</option>
+                                    <option value="Dr. Ahmed Hassan">Dr. Ahmed Hassan - Cardiologist</option>
+                                    <option value="Dr. Sara Mohamed">Dr. Sara Mohamed - Pediatrician</option>
+                                    <option value="Dr. Fatima Ali">Dr. Fatima Ali - Dermatologist</option>
+                                    <option value="Dr. Mohammad Ibrahim">Dr. Mohammad Ibrahim - Neurologist</option>
+                                    <option value="Dr. Zainab Hussain">Dr. Zainab Hussain - General Practitioner</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="appointment-date">Preferred Date</label>
+                                <input type="date" id="appointment-date" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="appointment-time">Preferred Time</label>
+                                <select id="appointment-time" required>
+                                    <option value="">Select time slot...</option>
+                                    <option value="09:00">09:00 AM</option>
+                                    <option value="10:00">10:00 AM</option>
+                                    <option value="11:00">11:00 AM</option>
+                                    <option value="14:00">02:00 PM</option>
+                                    <option value="15:00">03:00 PM</option>
+                                    <option value="16:00">04:00 PM</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="appointment-reason">Reason for Visit</label>
+                                <textarea id="appointment-reason" placeholder="Brief description of your health concern..." rows="4" required></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="appointment-notes">Additional Notes (Optional)</label>
+                                <textarea id="appointment-notes" placeholder="Any additional information..." rows="3"></textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Book Appointment</button>
+                                <button type="reset" class="btn btn-secondary">Clear</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- My Appointments Page -->
+            <div id="my-appointments" class="content-page">
+                <div class="container">
+                    <h2>My Appointments</h2>
+                    
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="app.filterAppointments('upcoming')">Upcoming</button>
+                        <button class="tab-btn" onclick="app.filterAppointments('completed')">Completed</button>
+                        <button class="tab-btn" onclick="app.filterAppointments('all')">All</button>
+                    </div>
+
+                    <div id="appointments-container" class="appointments-list">
+                        <p class="empty-state">No appointments found</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Consultation Page -->
+            <div id="ai-consultation" class="content-page">
+                <div class="container">
+                    <h2>AI Medical Consultation</h2>
+                    <p class="info-text">Ask general health questions and get AI-powered guidance. Note: This is for informational purposes only and not a substitute for professional medical advice.</p>
+
+                    <div class="chat-container">
+                        <div id="chat-messages" class="chat-messages">
+                            <div class="chat-message bot-message">
+                                <p>Hello! 👋 I'm your AI Doctor Assistant. How can I help you today? You can ask me about:</p>
+                                <ul style="text-align: left; display: inline-block; margin-top: 10px;">
+                                    <li>Common symptoms and remedies</li>
+                                    <li>General health information</li>
+                                    <li>Wellness tips</li>
+                                    <li>When to see a doctor</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="chat-input-area">
+                            <form id="chat-form">
+                                <input 
+                                    type="text" 
+                                    id="chat-input" 
+                                    placeholder="Type your health question here..." 
+                                    required
+                                >
+                                <button type="submit" class="btn-send">Send</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Page -->
+            <div id="profile" class="content-page">
+                <div class="container">
+                    <h2>My Profile</h2>
+                    <div class="form-container">
+                        <form id="profile-form">
+                            <div class="form-group">
+                                <label for="profile-name">Full Name</label>
+                                <input type="text" id="profile-name" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="profile-email">Email</label>
+                                <input type="email" id="profile-email" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="profile-phone">Phone Number</label>
+                                <input type="tel" id="profile-phone" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="profile-age">Age</label>
+                                <input type="number" id="profile-age" min="1" max="120">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="profile-blood-type">Blood Type</label>
+                                <select id="profile-blood-type">
+                                    <option value="">Select blood type...</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="profile-allergies">Known Allergies</label>
+                                <textarea id="profile-allergies" placeholder="List any allergies..." rows="3"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="profile-medical-history">Medical History</label>
+                                <textarea id="profile-medical-history" placeholder="Any chronic conditions or past medical issues..." rows="3"></textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notification System -->
+    <div id="notification" class="notification hidden"></div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="loading-spinner hidden">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
