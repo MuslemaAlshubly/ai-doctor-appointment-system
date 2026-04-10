@@ -42,7 +42,24 @@ def init_settings():
             "createdAt": datetime.now()
         })
 
+# Initialize demo patient if not exists
+def init_patient():
+    patient = patients.find_one({"email": "patient@example.com"})
+    if not patient:
+        patients.insert_one({
+            "email": "patient@example.com",
+            "password": "patient123",
+            "name": "John Doe",
+            "phone": "+1-555-0123",
+            "dateOfBirth": "1990-01-15",
+            "gender": "Male",
+            "address": "123 Main Street, City, Country",
+            "medicalHistory": "No known allergies",
+            "createdAt": datetime.now()
+        })
+
 # Initialize database
 def init_db():
     init_admin()
     init_settings()
+    init_patient()

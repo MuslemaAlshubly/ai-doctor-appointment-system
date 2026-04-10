@@ -7,6 +7,7 @@ from db import db, admins, doctors, patients, appointments, settings, init_db
 from bson.objectid import ObjectId
 import bcrypt
 import os
+import google.generativeai as genai
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -74,11 +75,162 @@ def logout():
     """Admin logout endpoint"""
     return jsonify({'message': 'Logged out successfully'}), 200
 
+# ==================== PATIENT AUTHENTICATION ====================
+@app.route('/api/patient/register', methods=['POST'])
+def patient_register():
+    """Patient registration endpoint"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['email', 'password', 'name', 'phone']
+        if not all(field in data for field in required_fields):
+            return jsonify({'message': 'Missing required fields'}), 400
+        
+        # Check if patient already exists
+        if patients.find_one({'email': data['email']}):
+            return jsonify({'message': 'Patient already exists'}), 409
+        
+        # Create new patient
+        patient_data = {
+            'email': data['email'],
+            'password': data['password'],  # In production, hash this!
+            'name': data['name'],
+            'phone': data['phone'],
+            'dateOfBirth': data.get('dateOfBirth', ''),
+            'gender': data.get('gender', ''),
+            'address': data.get('address', ''),
+            'medicalHistory': data.get('medicalHistory', ''),
+            'createdAt': datetime.now()
+        }
+        
+        result = patients.insert_one(patient_data)
+        
+        return jsonify({
+            'message': 'Patient registered successfully',
+            'patientId': str(result.inserted_id)
+        }), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/patient/login', methods=['POST'])
+def patient_login():
+    """Patient login endpoint"""
+    try:
+        data = request.get_json()
+        
+        if not data or not data.get('email') or not data.get('password'):
+            return jsonify({'message': 'Missing email or password'}), 400
+        
+        patient = patients.find_one({'email': data['email']})
+        
+        if not patient or patient.get('password') != data.get('password'):
+            return jsonify({'message': 'Invalid credentials'}), 401
+        
+        token = create_access_token(identity=str(patient['_id']))
+        
+        return jsonify({
+            'token': token,
+            'patientId': str(patient['_id']),
+            'patientName': patient.get('name'),
+            'patientEmail': patient.get('email')
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/patient/me', methods=['GET'])
+@jwt_required()
+def get_current_patient():
+    """Get current logged-in patient info"""
+    try:
+        patient_id = get_jwt_identity()
+        patient = patients.find_one({'_id': ObjectId(patient_id)})
+        
+        if not patient:
+            return jsonify({'error': 'Patient not found'}), 404
+        
+        return jsonify(serialize_document(patient)), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== AI ROUTES ====================
+@app.route('/api/ai/analyze-symptoms', methods=['POST'])
+@jwt_required()
+def analyze_symptoms():
+    """Analyze patient symptoms using Google Gemini AI"""
+    try:
+        data = request.get_json()
+        symptoms = data.get('symptoms', '')
+        duration = data.get('duration', '')
+        severity = data.get('severity', 'moderate')
+        
+        if not symptoms:
+            return jsonify({'error': 'Symptoms are required'}), 400
+        
+        # Configure Gemini AI
+        api_key = os.getenv('GEMINI_API_KEY')
+        if not api_key or api_key == 'your_gemini_api_key_here':
+            # Return demo response if API key not configured
+            return jsonify({
+                'analysis': 'This is a demo analysis. To enable AI-powered symptom analysis, please configure your GEMINI_API_KEY in the .env file.\n\nBased on your description of ' + symptoms + ', we recommend consulting with a general practitioner or specialist.',
+                'recommendedSpecialization': 'General Practice'
+            }), 200
+        
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-pro')
+        
+        # Create prompt for Gemini
+        prompt = f"""You are a medical advisor AI. A patient is describing their symptoms for a doctor consultation.
+
+Patient Symptoms: {symptoms}
+Duration: {duration if duration else 'Not specified'}
+Severity: {severity}
+
+Please provide:
+1. A brief analysis of the symptoms
+2. Possible medical conditions to consider
+3. Which medical specialists might be helpful
+
+Format your response clearly and remind them to consult a qualified doctor for proper diagnosis.
+
+Also suggest which type of doctor specialization would be most appropriate (e.g., General Practice, Cardiology, Neurology, Orthopedics, Dermatology, ENT, Pediatrics, etc.)"""
+
+        response = model.generate_content(prompt)
+        analysis_text = response.text
+        
+        # Extract recommended specialization from the analysis
+        recommended_spec = 'General Practice'
+        
+        # Try to identify specialization from response
+        if 'Cardiology' in analysis_text or 'cardiologist' in analysis_text.lower():
+            recommended_spec = 'Cardiology'
+        elif 'Neurology' in analysis_text or 'neurologist' in analysis_text.lower():
+            recommended_spec = 'Neurology'
+        elif 'Orthopedic' in analysis_text or 'orthopedist' in analysis_text.lower():
+            recommended_spec = 'Orthopedics'
+        elif 'Dermatology' in analysis_text or 'dermatologist' in analysis_text.lower():
+            recommended_spec = 'Dermatology'
+        elif 'ENT' in analysis_text or 'otolaryngologist' in analysis_text.lower():
+            recommended_spec = 'ENT'
+        elif 'Pediatric' in analysis_text or 'pediatrician' in analysis_text.lower():
+            recommended_spec = 'Pediatrics'
+        elif 'Gastro' in analysis_text or 'gastroenterologist' in analysis_text.lower():
+            recommended_spec = 'Gastroenterology'
+        elif 'Pulmonology' in analysis_text or 'pulmonologist' in analysis_text.lower() or 'respiratory' in analysis_text.lower():
+            recommended_spec = 'Pulmonology'
+        
+        return jsonify({
+            'analysis': analysis_text,
+            'recommendedSpecialization': recommended_spec
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # ==================== DOCTORS ROUTES ====================
 @app.route('/api/doctors', methods=['GET'])
-@jwt_required()
 def get_doctors():
-    """Get all doctors"""
+    """Get all doctors (public endpoint for patient portal)"""
     try:
         docs = list(doctors.find())
         return jsonify([serialize_document(doc) for doc in docs]), 200
